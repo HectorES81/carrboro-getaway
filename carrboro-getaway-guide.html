@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carrboro Getaway</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: sticky filter bar, a map that follows the filter, then a time-rail list of stops with travel legs */
+:root{
+  --bg:#f4f5f1; --surface:#ffffff; --ink:#1d2420; --muted:#5b685f; --rule:#d8ddd5;
+  --brick:#8a3b2a; --pine:#2f5d4a; --chip:#e8ece5; --warn-bg:#fbf0e6; --warn-ink:#7a3d12;
+  --display:"Gloock", Georgia, serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#131815;--surface:#1b221e;--ink:#e5ebe6;--muted:#9ba89f;--rule:#2c362f;
+    --brick:#e08f78;--pine:#86bfa3;--chip:#25302a;--warn-bg:#2d2218;--warn-ink:#f0bb8a;color-scheme:dark}
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:24px 56px;display:flex;flex-direction:column;gap:22px}
+header{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--pine);font-weight:600}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(34px,8vw,46px);line-height:1.05;margin:0}
+.sub{color:var(--muted);margin:0}
+.base{font-size:14px;color:var(--muted)}
+.base b{color:var(--ink)}
+a{color:var(--pine);text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--brick);outline-offset:2px}
+
+.filters{position:sticky;top:0;z-index:1000;background:var(--bg);padding-block:10px;border-bottom:1px solid var(--rule);display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.row::-webkit-scrollbar{display:none}
+.lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;align-self:center;min-width:44px}
+button.f{font:inherit;font-size:14px;font-weight:500;border:1px solid var(--rule);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 13px;white-space:nowrap;cursor:pointer}
+button.f[aria-pressed="true"]{background:var(--pine);border-color:var(--pine);color:var(--bg)}
+
+#map{height:300px;border-radius:10px;border:1px solid var(--rule);overflow:hidden;background:var(--chip)}
+.mapnote{font-size:13px;color:var(--muted);margin-top:-14px}
+.count{font-size:14px;color:var(--muted)}
+
+.daygroup{display:flex;flex-direction:column;gap:4px}
+.dayhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-top:10px}
+.dayhead h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0}
+.wx{font-size:13px;color:var(--muted)}
+ol{list-style:none;margin:0;padding:0}
+.stop{display:grid;grid-template-columns:30px 1fr;gap:12px;padding:14px 0;border-top:1px solid var(--rule)}
+.stop:first-child{border-top:0}
+.pin{width:26px;height:26px;border-radius:50%;background:var(--brick);color:var(--bg);font-size:13px;font-weight:700;display:grid;place-items:center;margin-top:2px;font-variant-numeric:tabular-nums}
+.body{min-width:0;display:flex;flex-direction:column;gap:5px}
+.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+.t{font-family:var(--mono);font-size:13px;color:var(--brick);font-variant-numeric:tabular-nums}
+.tag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.body strong{font-weight:600;font-size:17px;line-height:1.3}
+.body p{margin:0;color:var(--muted);font-size:15px}
+.leg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.leg .chip{background:var(--chip);border-radius:6px;padding:3px 8px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.addr{font-size:13px;color:var(--muted)}
+.flag{background:var(--warn-bg);color:var(--warn-ink);font-size:13px;padding:6px 10px;border-radius:6px}
+.alt{font-size:14px;color:var(--muted)}
+.alt b{color:var(--ink);font-weight:600}
+.empty{color:var(--muted);padding:20px 0}
+
+.todo{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.todo h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0}
+.todo ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:15px}
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--rule);padding-top:12px}
+.leaflet-container{font-family:var(--body)}
+.mk{background:#8a3b2a;color:#fff;border:2px solid #fff;border-radius:50%;width:26px;height:26px;display:grid;place-items:center;font:700 12px/1 system-ui,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Sun Oct 4 – Wed Oct 7, 2026</div>
+    <h1>Carrboro Getaway</h1>
+    <p class="sub">Two easy days of good food, short walks and downtime, based at a cottage in downtown Carrboro.</p>
+    <div class="base"><b>Cottage:</b> 113-A W Poplar Ave, Carrboro, NC 27510 · <a href="https://www.google.com/maps/search/?api=1&query=113-A+W+Poplar+Ave+Carrboro+NC+27510" target="_blank" rel="noopener">Open in Maps</a></div>
+  </header>
+
+  <div class="filters" role="group" aria-label="Filter the itinerary">
+    <div class="row" id="dayRow"><span class="lbl">Day</span></div>
+    <div class="row" id="partRow"><span class="lbl">Time</span></div>
+  </div>
+
+  <div id="map" aria-label="Map of the selected stops"></div>
+  <div class="mapnote">Numbers on the map match the stops below. Tap a pin for directions.</div>
+
+  <div class="count" id="count"></div>
+  <div id="list"></div>
+
+  <section class="todo">
+    <h3>Book &amp; confirm before Sunday</h3>
+    <ul>
+      <li>Oakleaf, Mon 7:00 PM. Kitchen closes 8:30 on Mondays. 984-234-0054</li>
+      <li>Lantern, Tue 7:00 PM (OpenTable or 919-969-8846). Ask for the back patio.</li>
+      <li>Airbnb check-in Sunday evening and checkout Wednesday by 7:15 AM: confirm both with Karin &amp; Linda.</li>
+      <li>Enterprise King George (540-663-2244) is open weekdays 8–4. Confirm a midday Wednesday return.</li>
+    </ul>
+  </section>
+
+  <footer>Miles and drive times are estimates based on typical routes and normal traffic; tap "Directions" for live numbers. Hours were checked Oct 1, 2026 and can change. Weather is an early forecast.</footer>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+var COT = "113 W Poplar Ave, Carrboro, NC 27510";
+var DAYS = [
+  {id:"sun", label:"Sun 10/4", title:"Sunday · Arrive", wx:"Rain likely · upper 60s"},
+  {id:"mon", label:"Mon 10/5", title:"Monday · Pickup & Chapel Hill", wx:"Clouds, then sun · mid 70s"},
+  {id:"tue", label:"Tue 10/6", title:"Tuesday · Hillsborough & Lantern", wx:"Sunny · upper 60s, low mid 40s"},
+  {id:"wed", label:"Wed 10/7", title:"Wednesday · Send-off & drive home", wx:"Frontier 1039 departs 10:07 AM"}
+];
+var PARTS = [{id:"morning",label:"Morning"},{id:"afternoon",label:"Afternoon"},{id:"evening",label:"Evening"}];
+
+/* leg: miles, drive minutes, optional walk minutes; from = origin used for the directions link */
+var STOPS = [
+ {day:"sun",part:"afternoon",time:"3:30 PM",name:"Leave Harbor View, Colonial Beach",
+  desc:"Head south in the rental. Expect wet roads in North Carolina.",
+  addr:"15 Harbor View Cir, Colonial Beach, VA",lat:38.2031914,lng:-76.9776643},
+ {day:"sun",part:"evening",time:"~7:45 PM",name:"Arrive at the cottage",
+  desc:"Check in and unload.",
+  addr:COT,lat:35.9127291,lng:-79.080978,
+  leg:{mi:"~240",drive:"4 hr–4 hr 15 min",from:"15 Harbor View Cir, Colonial Beach, VA"}},
+ {day:"sun",part:"evening",time:"8:15 PM",name:"Weaver Street Market",
+  desc:"Stock breakfast for both mornings (coffee, fruit, pastries), plus wine and snacks. Open until 9 PM.",
+  addr:"101 E Weaver St, Carrboro",lat:35.9111563,lng:-79.0715995,
+  leg:{mi:"0.6",drive:"3 min",walk:"12 min",from:COT}},
+
+ {day:"mon",part:"morning",time:"8:15 AM",name:"Leave for RDU",
+  desc:"Frontier 1112 from Orlando is scheduled to land around 9:09 AM. Check the flight status before you leave.",
+  addr:COT,lat:35.9127291,lng:-79.080978},
+ {day:"mon",part:"morning",time:"9:15 AM",name:"Pickup at RDU Terminal 2",
+  desc:"Wait in the cell phone lot until she has her bag.",
+  addr:"2400 John Brantley Blvd, Morrisville, NC",lat:35.8772112,lng:-78.7934179,
+  leg:{mi:"22",drive:"30–40 min (rush hour)",from:COT}},
+ {day:"mon",part:"morning",time:"10:45 AM",name:"Back at the cottage",
+  desc:"Bags down, coffee, showers. The rest of the morning is yours.",
+  addr:COT,lat:35.9127291,lng:-79.080978,
+  leg:{mi:"22",drive:"30 min",from:"RDU Terminal 2"}},
+ {day:"mon",part:"afternoon",time:"1:00 PM",name:"Lunch at Venable Rotisserie Bistro",
+  desc:"Global comfort food in the old Carr Mill. Weekday lunch ends at 2 PM.",
+  addr:"200 N Greensboro St, Carrboro · 919-904-7160",lat:35.9112946,lng:-79.0705468,
+  leg:{mi:"0.7",drive:"3 min",walk:"12 min",from:COT}},
+ {day:"mon",part:"afternoon",time:"3:30 PM",name:"UNC campus: Old Well & Coker Arboretum",
+  desc:"An easy, flat stroll across McCorkle Place to the Old Well, then the arboretum's shaded paths. The arboretum closes at 6 PM.",
+  addr:"399 E Cameron Ave, Chapel Hill",lat:35.9137707,lng:-79.0490019,
+  leg:{mi:"2.1",drive:"8 min",from:COT}},
+ {day:"mon",part:"afternoon",time:"5:00 PM",name:"Franklin Street wander",
+  desc:"Bookshops, cafés and people-watching. Head west as the light goes gold. Sunset is around 6:52.",
+  addr:"100 E Franklin St, Chapel Hill",lat:35.9129465,lng:-79.0553581,
+  leg:{mi:"0.4",drive:"walk",walk:"8 min",from:"Coker Arboretum, Chapel Hill"}},
+ {day:"mon",part:"evening",time:"7:00 PM",name:"Dinner at Oakleaf",
+  desc:"Farm-to-table cooking and sustainably caught seafood, in a low-lit room. Reviewers rave about the focaccia.",
+  addr:"310 E Main St, Carrboro · 984-234-0054",lat:35.9102709,lng:-79.0691725,
+  leg:{mi:"1.1",drive:"5 min",from:"100 E Franklin St, Chapel Hill"},
+  alt:"<b>Backup:</b> Glasshalfull in Carrboro, a wine bar with half-price bottles on Mondays.",
+  flag:"Many top spots, including Lantern, are closed Mondays. Book Oakleaf ahead. Monday seating ends at 8:30."},
+ {day:"mon",part:"evening",time:"9:00 PM",name:"Nightcap at Belltree",
+  desc:"Pre-Prohibition and house cocktails, hidden in an old hangar on Brewer Lane, with a cozy upstairs nook. Open until midnight.",
+  addr:"100 Brewer Ln, Carrboro · 984-234-0572",lat:35.9095896,lng:-79.065752,
+  leg:{mi:"0.3",drive:"walk",walk:"5 min",from:"310 E Main St, Carrboro"}},
+ {day:"mon",part:"evening",time:"~10:30 PM",name:"Home to the cottage",
+  desc:"A short walk or a quick drive.",
+  addr:COT,lat:35.9127291,lng:-79.080978,
+  leg:{mi:"1.1",drive:"4 min",walk:"20 min",from:"100 Brewer Ln, Carrboro"}},
+
+ {day:"tue",part:"morning",time:"Morning",name:"Slow start at the cottage",
+  desc:"Breakfast in, no alarm. It's chilly early (mid 40s), so bring a layer for the day.",
+  addr:COT,lat:35.9127291,lng:-79.080978},
+ {day:"tue",part:"morning",time:"11:15 AM",name:"Poet's Walk at Ayr Mount",
+  desc:"A free, flat one-mile loop past an 1815 brick house, through meadow and woods, down to the Eno River, and past a pond. Adirondack chairs overlook the fields.",
+  addr:"376 St Marys Rd, Hillsborough",lat:36.0793144,lng:-79.0846933,
+  leg:{mi:"14",drive:"22 min",from:COT}},
+ {day:"tue",part:"afternoon",time:"12:30 PM",name:"Lunch at Antonia's",
+  desc:"Upscale Italian on historic Churton Street, with house-made pasta and bread with olive oil. Free parking lot out back.",
+  addr:"101 N Churton St, Hillsborough · 919-643-7722",lat:36.075545,lng:-79.099627,
+  leg:{mi:"1.2",drive:"4 min",from:"376 St Marys Rd, Hillsborough"},
+  alt:"<b>More casual:</b> The Village Diner, scratch-made Southern food until 1:30 (600 W King St)."},
+ {day:"tue",part:"afternoon",time:"1:45 PM",name:"Riverwalk & King Street",
+  desc:"Paved greenway along the Eno River from Gold Park, then back up through downtown. Look in at the Colonial Inn's front porch (153 W King St).",
+  addr:"Gold Park, 415 Dimmocks Mill Rd, Hillsborough",lat:36.0709326,lng:-79.1103703,
+  leg:{mi:"0.9",drive:"3 min",walk:"15 min",from:"101 N Churton St, Hillsborough"}},
+ {day:"tue",part:"afternoon",time:"3:15 PM",name:"Back to the cottage",
+  desc:"Downtime before dinner.",
+  addr:COT,lat:35.9127291,lng:-79.080978,
+  leg:{mi:"13",drive:"22 min",from:"415 Dimmocks Mill Rd, Hillsborough"}},
+ {day:"tue",part:"evening",time:"7:00 PM",name:"Dinner at Lantern",
+  desc:"Chef Andrea Reusing's James Beard–winning restaurant: Asian flavors built on North Carolina ingredients. Dumplings, salt-and-pepper shrimp and the whole NC fish are standouts. This is the special dinner of the trip.",
+  addr:"423 W Franklin St, Chapel Hill · 919-969-8846",lat:35.9104562,lng:-79.0623173,
+  leg:{mi:"1.3",drive:"5 min",walk:"25 min",from:COT},
+  alt:"<b>Warmer alternative:</b> Talulla's (Turkish), steps away on W Franklin St."},
+ {day:"tue",part:"evening",time:"8:45 PM",name:"Last drink at Belltree, then home",
+  desc:"It's a short walk from Lantern, or call it a night.",
+  addr:"100 Brewer Ln, Carrboro",lat:35.9095896,lng:-79.065752,
+  leg:{mi:"0.3",drive:"walk",walk:"5 min",from:"423 W Franklin St, Chapel Hill"}},
+
+ {day:"wed",part:"morning",time:"6:30 AM",name:"Up, coffee, check out",
+  desc:"Load the car Tuesday night so the morning is just coffee and goodbyes.",
+  addr:COT,lat:35.9127291,lng:-79.080978},
+ {day:"wed",part:"morning",time:"8:05 AM",name:"Drop-off at RDU Terminal 2",
+  desc:"Leave the cottage at 7:20. This gets her to the airport about two hours before her 10:07 AM departure on Frontier 1039.",
+  addr:"2400 John Brantley Blvd, Morrisville, NC",lat:35.8772112,lng:-78.7934179,
+  leg:{mi:"22",drive:"35–45 min (rush hour)",from:COT}},
+ {day:"wed",part:"afternoon",time:"~12:15 PM",name:"Return the rental: Enterprise, King George",
+  desc:"Leave RDU at 8:15 and head north via I-85 and I-95, then east toward Dahlgren. Stop for fuel and food near South Hill or Petersburg, and top up the tank before the return. The route skips DC entirely.",
+  addr:"15425 Dahlgren Rd, King George, VA · 540-663-2244",lat:38.3401837,lng:-77.0714749,
+  leg:{mi:"~235",drive:"3 hr 45 min–4 hr",from:"RDU Airport"},
+  flag:"Branch hours are 8 AM–4 PM weekdays. Call ahead to confirm."},
+ {day:"wed",part:"afternoon",time:"~1:00 PM",name:"Back to Harbor View",
+  desc:"Pick up the truck from the dealership if it's ready, then home to the RV.",
+  addr:"15 Harbor View Cir, Colonial Beach, VA",lat:38.2031914,lng:-76.9776643,
+  leg:{mi:"14",drive:"20 min",from:"15425 Dahlgren Rd, King George, VA"}}
+];
+
+var state = {day:"all", part:"all"};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function dirUrl(from,to){return "https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(from)+"&destination="+encodeURIComponent(to)}
+function placeUrl(s){return "https://www.google.com/maps/search/?api=1&query="+s.lat+","+s.lng}
+
+function makeBtns(rowId, items, key){
+  var row=document.getElementById(rowId);
+  [{id:"all",label:"All"}].concat(items).forEach(function(it){
+    var b=document.createElement("button");
+    b.className="f";b.type="button";b.textContent=it.label;b.id=key+"-"+it.id;
+    b.setAttribute("aria-pressed", state[key]===it.id);
+    b.addEventListener("click",function(){state[key]=it.id;
+      row.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed", x===b)});render();});
+    row.appendChild(b);
+  });
+}
+makeBtns("dayRow",DAYS,"day");
+makeBtns("partRow",PARTS,"part");
+
+/* map */
+var map=null, layer=null;
+if(window.L){
+  map=L.map("map",{scrollWheelZoom:false});
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
+  layer=L.layerGroup().addTo(map);
+} else {
+  document.getElementById("map").innerHTML='<div class="empty" style="padding:16px">The map needs an internet connection. The list and directions links below still work.</div>';
+}
+
+function render(){
+  var list=document.getElementById("list"); list.innerHTML="";
+  var shown=STOPS.map(function(s,i){s.n=i+1;return s}).filter(function(s){
+    return (state.day==="all"||s.day===state.day)&&(state.part==="all"||s.part===state.part)});
+  document.getElementById("count").textContent = shown.length+" stop"+(shown.length===1?"":"s")+" shown";
+  if(!shown.length){list.innerHTML='<p class="empty">Nothing planned for that combination. Try another time of day.</p>';}
+  DAYS.forEach(function(d){
+    var items=shown.filter(function(s){return s.day===d.id}); if(!items.length) return;
+    var g=document.createElement("section"); g.className="daygroup";
+    g.innerHTML='<div class="dayhead"><h2>'+esc(d.title)+'</h2><span class="wx">'+esc(d.wx)+'</span></div>';
+    var ol=document.createElement("ol");
+    items.forEach(function(s){
+      var leg="";
+      if(s.leg){
+        leg='<div class="leg"><span class="chip">'+esc(s.leg.mi)+' mi</span>'+
+          (s.leg.drive!=="walk"?'<span class="chip">🚗 '+esc(s.leg.drive)+'</span>':'')+
+          (s.leg.walk?'<span class="chip">🚶 '+esc(s.leg.walk)+'</span>':'')+
+          '<a href="'+dirUrl(s.leg.from,s.addr.split(" · ")[0])+'" target="_blank" rel="noopener">Directions</a></div>';
+      } else {
+        leg='<div class="leg"><a href="'+placeUrl(s)+'" target="_blank" rel="noopener">Open in Maps</a></div>';
+      }
+      var li=document.createElement("li"); li.className="stop";
+      li.innerHTML='<div class="pin">'+s.n+'</div><div class="body">'+
+        '<div class="top"><span class="t">'+esc(s.time)+'</span><span class="tag">'+esc(s.part)+'</span></div>'+
+        '<strong>'+esc(s.name)+'</strong><p>'+esc(s.desc)+'</p>'+leg+
+        '<div class="addr">'+esc(s.addr)+'</div>'+
+        (s.alt?'<div class="alt">'+s.alt+'</div>':'')+
+        (s.flag?'<div class="flag">'+esc(s.flag)+'</div>':'')+'</div>';
+      ol.appendChild(li);
+    });
+    g.appendChild(ol); list.appendChild(g);
+  });
+  if(map){
+    layer.clearLayers(); var pts=[], seen={};
+    shown.forEach(function(s){
+      var key=s.lat+","+s.lng; pts.push([s.lat,s.lng]);
+      var icon=L.divIcon({className:"",html:'<div class="mk">'+s.n+'</div>',iconSize:[26,26],iconAnchor:[13,13]});
+      var off=seen[key]?seen[key]*0.00018:0; seen[key]=(seen[key]||0)+1;
+      L.marker([s.lat+off,s.lng+off],{icon:icon}).addTo(layer)
+        .bindPopup('<b>'+s.n+'. '+esc(s.name)+'</b><br>'+esc(s.time)+'<br><a href="'+placeUrl(s)+'" target="_blank" rel="noopener">Directions</a>');
+    });
+    if(pts.length){ map.fitBounds(pts,{padding:[30,30],maxZoom:15}); }
+    else { map.setView([35.9127291,-79.080978],13); }
+  }
+}
+render();
+</script>
+</body>
+</html>
