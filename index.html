@@ -84,8 +84,8 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--rule);paddin
     <div class="eyebrow">Mon Oct 5 – Wed Oct 7, 2026</div>
     <h1>Blue Ridge to Carrboro</h1>
     <p class="sub">An RDU pickup, a James River evening in Lynchburg, a Hillsborough stop on the way south, and one night in a Carrboro cottage close to the airport.</p>
-    <div class="base"><b>RV:</b> Thousand Trails, 405 Mollies Creek Rd, Gladys, VA · <a href="https://www.google.com/maps/search/?api=1&query=405+Mollies+Creek+Rd+Gladys+VA+24554" target="_blank" rel="noopener">Map</a></div>
-    <div class="base"><b>Cottage (Tue night):</b> 113-A W Poplar Ave, Carrboro, NC · <a href="https://www.google.com/maps/search/?api=1&query=113-A+W+Poplar+Ave+Carrboro+NC+27510" target="_blank" rel="noopener">Map</a></div>
+    <div class="base"><b>RV:</b> Thousand Trails, 405 Mollies Creek Rd, Gladys, VA · <a href="https://www.google.com/maps/search/?api=1&query=Thousand+Trails+Lynchburg+Gladys%2C+405+Mollies+Creek+Rd%2C+Gladys%2C+VA+24554&query_place_id=ChIJKcy3bovBsokRYcJx-lrkApk" target="_blank" rel="noopener">Map</a></div>
+    <div class="base"><b>Cottage (Tue night):</b> 113-A W Poplar Ave, Carrboro, NC · <a href="https://www.google.com/maps/search/?api=1&query=113+W+Poplar+Ave%2C+Carrboro%2C+NC+27510&query_place_id=ChIJjXBPmxbDrIkR6SJ-MAq9uH4" target="_blank" rel="noopener">Map</a></div>
   </header>
 
   <div class="filters" role="group" aria-label="Filter the itinerary">
@@ -126,6 +126,7 @@ var P = {
   rv:   {name:"Thousand Trails Lynchburg (Gladys)", addr:"405 Mollies Creek Rd, Gladys, VA 24554", pid:"ChIJKcy3bovBsokRYcJx-lrkApk", lat:37.2096561, lng:-79.0448123},
   cell: {name:"RDU Cell Phone Lot", addr:"Trade Dr, Morrisville, NC 27560", pid:"ChIJsZtdBK3xrIkRKqjbaycL4_0", lat:35.8663835, lng:-78.801893},
   t2:   {name:"RDU Terminal 2", addr:"2400 John Brantley Blvd, Morrisville, NC 27560", pid:"ChIJb2Xh51fwrIkR7GD6N-G8mps", lat:35.8772112, lng:-78.7934179},
+  dg:   {name:"Sarah P. Duke Gardens", addr:"420 Anderson St, Durham, NC 27705", pid:"ChIJpQa5L6nmrIkR7hmOPw0fvFE", lat:36.0020618, lng:-78.931518, phone:"919-684-3698"},
   wp:   {name:"West Point on the Eno Park", addr:"5101 N Roxboro St, Durham, NC 27704", pid:"ChIJfyM3Hz_irIkRz9M7S04ldb0", lat:36.0693421, lng:-78.9090388},
   be:   {name:"Brookland Eats", addr:"333 Old Durham Rd, Roxboro, NC 27573", pid:"ChIJq-OEXckVrYkRdajUcCfYZFY", lat:36.3750624, lng:-78.9801325, phone:"336-322-1015"},
   rfp:  {name:"Riverfront Park Parking (Riverwalk)", addr:"1300 Jefferson St, Lynchburg, VA 24504", pid:"ChIJxYp_sRvZsokRzrBKPeZ-Vjc", lat:37.4125024, lng:-79.137118},
@@ -137,6 +138,10 @@ var P = {
   wsm:  {name:"Weaver Street Market", addr:"101 E Weaver St, Carrboro, NC 27510", pid:"ChIJZXTnQBnDrIkRT0ER8Dvzjd8", lat:35.9111563, lng:-79.0715995},
   tes:  {name:"Tesoro", addr:"100 E Weaver St, Carrboro, NC 27510", pid:"ChIJTVRVXHTDrIkR4YcP_tuxTUA", lat:35.9107436, lng:-79.0716082, phone:"919-537-8494"},
   sd:   {name:"Spotted Dog", addr:"111 E Main St, Carrboro, NC 27510", pid:"ChIJxRLfXBnDrIkRxmpnwVrOhWU"},
+  lc:   {name:"Lake Crabtree County Park", addr:"1400 Aviation Pkwy, Morrisville, NC 27560", pid:"ChIJXRdcNJ7xrIkRKrsCxcMH4tM"},
+  elmo: {name:"Elmo's Diner", addr:"776 9th St, Durham, NC 27705", pid:"ChIJ8SU_7PjjrIkR9ySWrukQH-0", lat:36.0104327, lng:-78.9217326, phone:"919-416-3823"},
+  inc:  {name:"Incorrigible Cafe", addr:"44 Gordon St, Hall's Way #60, Roxboro, NC 27573", pid:"ChIJleOXtHoVrYkR08KTuGpT064"},
+  ss:   {name:"Steel String Brewery", addr:"106A S Greensboro St, Carrboro, NC 27510", pid:"ChIJg2uz1xvDrIkRV0GwudwXOX0"},
   bell: {name:"Belltree Cocktail Club", addr:"100 Brewer Ln, Carrboro, NC 27510", pid:"ChIJ90ebCx7DrIkRA3_B29Gm-fM", lat:35.9095896, lng:-79.065752, phone:"984-234-0572"}
 };
 
@@ -150,18 +155,21 @@ var STOPS = [
  {day:"mon",part:"morning",time:"9:15 AM",at:"t2",name:"Pickup at Terminal 2 arrivals",
   desc:"Frontier uses Terminal 2.",
   leg:{mi:"1.2",drive:"3 min"}},
- {day:"mon",part:"morning",time:"9:45 AM",at:"wp",name:"Optional stretch: West Point on the Eno",
-  desc:"A city park right on your route north (US-501/Roxboro St), with a restored mill, a dam and footbridges over the Eno River. A 20–30 minute riverside wander after her early flight. Skip it if she'd rather keep moving.",
-  leg:{mi:"19",drive:"25 min"}},
- {day:"mon",part:"morning",time:"11:00 AM",at:"be",name:"Lunch at Brookland Eats, Roxboro",
-  desc:"A chef-owned spot with rustic charm and a seasonal menu, known locally for burgers, steaks and fresh salads, with a deck for eating outside. Lunch runs 11–2:30, so you'll arrive as they open.",
-  leg:{mi:"27",drive:"32 min"}},
- {day:"mon",part:"afternoon",time:"~1:45 PM",at:"rv",name:"Back at the RV",
-  desc:"Settle in, show her around, rest. She's been up since before dawn.",
-  leg:{mi:"73",drive:"1 hr 25 min"}},
+ {day:"mon",part:"morning",time:"9:45 AM",at:"dg",name:"Stroll Sarah P. Duke Gardens",
+  desc:"55 acres of free public gardens in Durham, on your way north: the historic stone Terraces, a koi pond, and paved paths through the Asiatic Arboretum. Grounds open 8 AM to sunset daily, Mondays included. Parking is $2/hour at the Anderson St entrance. Restrooms and a café (10–4) are in the visitor center. Allow about an hour.",
+  leg:{mi:"16",drive:"20 min"},
+  flag:"Changed: West Point on the Eno is closed for renovation until 2027."},
+ {day:"mon",part:"morning",time:"11:00 AM",at:"elmo",name:"Brunch at Elmo's Diner",
+  desc:"A beloved old-school Durham diner on Ninth Street with counter seats, homemade rolls, and breakfast served until close. Big portions, easy prices, its own parking lot. Open Mondays 7–3.",
+  leg:{mi:"1.1",drive:"4 min"},
+  alts:[{k:"be",label:"On the way home instead",note:"chef-owned, rustic charm, deck seating, lunch 11–2:30. Splits the drive in Roxboro",leg:{mi:"32",drive:"38 min"}}]},
+ {day:"mon",part:"afternoon",time:"~2:00 PM",at:"rv",name:"Back at the RV",
+  desc:"North on US-501 through Roxboro and South Boston. Settle in, show her around, rest. She's been up since before dawn.",
+  leg:{mi:"~100",drive:"1 hr 50 min"}},
  {day:"mon",part:"evening",time:"5:00 PM",at:"rfp",name:"Riverwalk to Percival's Island",
   desc:"Park at Riverfront Park and walk the flat, paved Riverwalk about 0.4 miles onto Percival's Island in the James River. Trestle-bridge views, benches over the water, herons. Walk out as far as you like and back.",
-  leg:{mi:"19",drive:"30 min"}},
+  leg:{mi:"19",drive:"30 min"},
+  alts:[{k:"rv",label:"Closer",note:"the lake trail right at the campground. Campers call the lake walk the best part of the park. Stay in and grill if you'd rather skip the drive. Nothing charming within 15 minutes of the RV is open for dinner on a Monday, so Lynchburg is the nearest good option",leg:{mi:"0",walk:"0 min"}}]},
  {day:"mon",part:"evening",time:"6:30 PM",at:"sky",name:"Dinner at Skyline",
   desc:"Dinner at the top of a hotel on Church Street, with a view over the hills and river around sunset (about 6:55). Reviewers praise the baked brie, scallops and cocktails. Open Mondays 4–10.",
   leg:{mi:"0.8",drive:"4 min",walk:"15 min, uphill"},
@@ -175,7 +183,8 @@ var STOPS = [
   desc:"Coffee outside, pack an overnight bag, nothing scheduled. Leave around 11:00: US-501 to Roxboro, then NC-57 into Hillsborough."},
  {day:"tue",part:"afternoon",time:"~1:00 PM",at:"ant",name:"Lunch at Antonia's, Hillsborough",
   desc:"Italian with house-made pasta, in an old building on historic Churton Street. Bread with olive oil to start. Free lot out back. Open from 11 on Tuesdays.",
-  leg:{mi:"100",drive:"1 hr 55 min"}},
+  leg:{mi:"100",drive:"1 hr 55 min"},
+  alts:[{k:"inc",label:"Break up the drive",note:"a cozy cafe where everything is made from scratch, open Tuesdays 7:30–3. It's at the halfway point. From there it's about 35 minutes to Hillsborough for the Poet's Walk, or 50 minutes straight to Carrboro",leg:{mi:"73",drive:"1 hr 25 min"}}]},
  {day:"tue",part:"afternoon",time:"2:05 PM",at:"ayr",name:"Poet's Walk at Ayr Mount",
   desc:"A free, flat one-mile loop past an 1815 brick house, through meadow and woods to the Eno River, with Adirondack chairs overlooking the fields. Allow 35–45 minutes.",
   leg:{mi:"1.2",drive:"4 min"}},
@@ -192,7 +201,8 @@ var STOPS = [
   flag:"Tesoro is small. Reserve ahead."},
  {day:"tue",part:"evening",time:"8:00 PM",at:"bell",name:"Optional nightcap: Belltree",
   desc:"A hidden cocktail bar in an old hangar, with a cozy upstairs nook.",
-  leg:{mi:"0.5",walk:"9 min",mode:"walking"}},
+  leg:{mi:"0.5",walk:"9 min",mode:"walking"},
+  alts:[{k:"ss",label:"Closer",note:"a relaxed local brewery with a patio, a block from Tesoro, open until 11. The walk home is then about 13 minutes instead of 22",leg:{mi:"0.1",walk:"2 min",mode:"walking"}}]},
  {day:"tue",part:"evening",time:"~9:00 PM",at:"cot",name:"Walk home to the cottage",
   desc:"An early night before the airport run.",
   leg:{mi:"1.2",drive:"4 min",walk:"22 min",mode:"walking"}},
@@ -268,8 +278,11 @@ function render(){
     var ol=document.createElement("ol");
     items.forEach(function(s){
       var p=s.p;
-      var alts=(s.alts||[]).map(function(a){var ap=P[a.k];
-        return '<div class="alt"><b>'+esc(a.label)+':</b> <a href="'+placeUrl(ap)+'" target="_blank" rel="noopener">'+esc(ap.name)+'</a> ('+esc(ap.addr)+'), '+esc(a.note)+'.</div>';}).join("");
+      var alts=(s.alts||[]).map(function(a){var ap=P[a.k], from=s.prev?s.prev.p:null, lg=a.leg;
+        var chips=lg?('<div class="leg"><span class="from">From '+esc(from.name)+':</span><span class="chip">'+esc(lg.mi)+' mi</span>'+
+          (lg.drive?'<span class="chip">🚗 '+esc(lg.drive)+'</span>':'')+(lg.walk?'<span class="chip">🚶 '+esc(lg.walk)+'</span>':'')+
+          (lg.mi!=="0"?'<a href="'+dirUrl(from,ap,lg.mode)+'" target="_blank" rel="noopener">Directions</a>':'')+'</div>'):'';
+        return '<div class="alt"><b>'+esc(a.label)+':</b> <a href="'+placeUrl(ap)+'" target="_blank" rel="noopener">'+esc(ap.name)+'</a> ('+esc(ap.addr)+'), '+esc(a.note)+'.'+chips+'</div>';}).join("");
       var li=document.createElement("li"); li.className="stop";
       li.innerHTML='<div class="pin">'+s.n+'</div><div class="body">'+
         '<div class="top"><span class="t">'+esc(s.time)+'</span><span class="tag">'+esc(s.part)+'</span></div>'+
