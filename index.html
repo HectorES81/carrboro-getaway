@@ -242,7 +242,16 @@ makeBtns("partRow",PARTS,"part");
 var map=null, layer=null;
 if(window.L){
   map=L.map("map",{scrollWheelZoom:false});
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{maxZoom:19,subdomains:"abcd",attribution:"&copy; OpenStreetMap contributors &copy; CARTO"}).addTo(map);
+  /* OpenStreetMap tiles on the hosted site; Esri tiles when opened as a local file (OSM refuses those) or if OSM fails. */
+  var esriUrl="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";
+  var esriOpts={maxZoom:19,attribution:"Tiles &copy; Esri"};
+  var useOsm=location.protocol==="http:"||location.protocol==="https:";
+  var base=useOsm
+    ? L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"})
+    : L.tileLayer(esriUrl,esriOpts);
+  var swapped=false;
+  base.on("tileerror",function(){ if(useOsm&&!swapped){ swapped=true; map.removeLayer(base); L.tileLayer(esriUrl,esriOpts).addTo(map); } });
+  base.addTo(map);
   layer=L.layerGroup().addTo(map);
 } else {
   document.getElementById("map").innerHTML='<div class="empty" style="padding:16px">The map needs an internet connection. The list and directions links below still work.</div>';
