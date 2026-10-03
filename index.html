@@ -63,6 +63,8 @@ ol{list-style:none;margin:0;padding:0}
 .leg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
 .leg .chip{background:var(--chip);border-radius:6px;padding:3px 8px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .addr{font-size:13px;color:var(--muted)}
+.from{font-size:13px;color:var(--muted)}
+.mk{white-space:nowrap}
 .flag{background:var(--warn-bg);color:var(--warn-ink);font-size:13px;padding:6px 10px;border-radius:6px}
 .alt{font-size:14px;color:var(--muted)}
 .alt b{color:var(--ink);font-weight:600}
@@ -92,7 +94,7 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--rule);paddin
   </div>
 
   <div id="map" aria-label="Map of the selected stops"></div>
-  <div class="mapnote">Numbers on the map match the stops below. Tap a pin for directions.</div>
+  <div class="mapnote">Pin numbers match the stops below. Places you visit twice share one pin.</div>
 
   <div class="count" id="count"></div>
   <div id="list"></div>
@@ -107,12 +109,11 @@ footer{font-size:13px;color:var(--muted);border-top:1px solid var(--rule);paddin
     </ul>
   </section>
 
-  <footer>Miles and drive times are estimates based on typical routes and normal traffic; tap "Directions" for live numbers. Hours were checked Oct 2, 2026 and can change. Weather is an early forecast.</footer>
+  <footer>Every leg is measured from the stop before it. Miles and times are road estimates for normal traffic; tap "Directions" for live numbers. Hours were checked Oct 2, 2026 and can change. Weather is an early forecast.</footer>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-var COT = "113 W Poplar Ave, Carrboro, NC 27510";
 var DAYS = [
   {id:"mon", label:"Mon 10/5", title:"Monday · Pickup & Lynchburg", wx:"Morning clouds, then sun · mid 70s"},
   {id:"tue", label:"Tue 10/6", title:"Tuesday · Hillsborough & Carrboro", wx:"Sunny · upper 60s, chilly night"},
@@ -120,98 +121,98 @@ var DAYS = [
 ];
 var PARTS = [{id:"morning",label:"Morning"},{id:"afternoon",label:"Afternoon"},{id:"evening",label:"Evening"}];
 
-/* leg: miles, drive minutes, optional walk minutes; from = origin used for the directions link */
-var RV = "405 Mollies Creek Rd, Gladys, VA 24554";
+/* Every place has its exact Google place ID, so links open the real business, not a generic search. */
+var P = {
+  rv:   {name:"Thousand Trails Lynchburg (Gladys)", addr:"405 Mollies Creek Rd, Gladys, VA 24554", pid:"ChIJKcy3bovBsokRYcJx-lrkApk", lat:37.2096561, lng:-79.0448123},
+  cell: {name:"RDU Cell Phone Lot", addr:"Trade Dr, Morrisville, NC 27560", pid:"ChIJsZtdBK3xrIkRKqjbaycL4_0", lat:35.8663835, lng:-78.801893},
+  t2:   {name:"RDU Terminal 2", addr:"2400 John Brantley Blvd, Morrisville, NC 27560", pid:"ChIJb2Xh51fwrIkR7GD6N-G8mps", lat:35.8772112, lng:-78.7934179},
+  wp:   {name:"West Point on the Eno Park", addr:"5101 N Roxboro St, Durham, NC 27704", pid:"ChIJfyM3Hz_irIkRz9M7S04ldb0", lat:36.0693421, lng:-78.9090388},
+  be:   {name:"Brookland Eats", addr:"333 Old Durham Rd, Roxboro, NC 27573", pid:"ChIJq-OEXckVrYkRdajUcCfYZFY", lat:36.3750624, lng:-78.9801325, phone:"336-322-1015"},
+  rfp:  {name:"Riverfront Park Parking (Riverwalk)", addr:"1300 Jefferson St, Lynchburg, VA 24504", pid:"ChIJxYp_sRvZsokRzrBKPeZ-Vjc", lat:37.4125024, lng:-79.137118},
+  sky:  {name:"Skyline", addr:"712 Church St, Lynchburg, VA 24504", pid:"ChIJ5_h4Xg3ZsokRU3uePRQHiMM", lat:37.4153976, lng:-79.143898, phone:"434-616-4425"},
+  boot: {name:"Bootleggers", addr:"50 13th St, Lower Bluffwalk, Lynchburg, VA 24504", pid:"ChIJi3_9YWvZsokRir4UbPN5Oks"},
+  ant:  {name:"Antonia's Restaurant", addr:"101 N Churton St, Hillsborough, NC 27278", pid:"ChIJL3Szbi_frIkRUToVmMZ5Dyc", lat:36.075545, lng:-79.099627, phone:"919-643-7722"},
+  ayr:  {name:"Ayr Mount (Poet's Walk)", addr:"376 St Marys Rd, Hillsborough, NC 27278", pid:"ChIJ964KSBbfrIkR2MoOn8BuMBI", lat:36.0793144, lng:-79.0846933},
+  cot:  {name:"Carrboro cottage (Airbnb)", addr:"113 W Poplar Ave, Carrboro, NC 27510", pid:"ChIJjXBPmxbDrIkR6SJ-MAq9uH4", lat:35.9127291, lng:-79.080978},
+  wsm:  {name:"Weaver Street Market", addr:"101 E Weaver St, Carrboro, NC 27510", pid:"ChIJZXTnQBnDrIkRT0ER8Dvzjd8", lat:35.9111563, lng:-79.0715995},
+  tes:  {name:"Tesoro", addr:"100 E Weaver St, Carrboro, NC 27510", pid:"ChIJTVRVXHTDrIkR4YcP_tuxTUA", lat:35.9107436, lng:-79.0716082, phone:"919-537-8494"},
+  sd:   {name:"Spotted Dog", addr:"111 E Main St, Carrboro, NC 27510", pid:"ChIJxRLfXBnDrIkRxmpnwVrOhWU"},
+  bell: {name:"Belltree Cocktail Club", addr:"100 Brewer Ln, Carrboro, NC 27510", pid:"ChIJ90ebCx7DrIkRA3_B29Gm-fM", lat:35.9095896, lng:-79.065752, phone:"984-234-0572"}
+};
+
+/* leg = travel from the PREVIOUS stop in this list. mode: drive or walk. Distances are road estimates. */
 var STOPS = [
- {day:"mon",part:"morning",time:"6:30 AM",name:"Leave the RV for RDU",
-  desc:"South on US-501 through South Boston and Roxboro, then Durham to the airport. Stop for gas and a restroom in Roxboro around 7:45, because the airport cell lot has neither.",
-  addr:RV,lat:37.2105233,lng:-79.0437579},
- {day:"mon",part:"morning",time:"~8:45 AM",name:"Wait at the RDU Cell Lot",
-  desc:"Free, signed from I-40, about 3 minutes from the terminals. Wait in the truck until she texts that she has her bag. Frontier 1112 is scheduled to land around 9:09.",
-  addr:"RDU Cell Lot, Morrisville, NC",lat:35.8772112,lng:-78.7934179,
-  leg:{mi:"~118",drive:"2 hr 15 min",from:RV}},
- {day:"mon",part:"morning",time:"9:15 AM",name:"Pickup at Terminal 2",
-  desc:"Frontier arrivals are at Terminal 2.",
-  addr:"2400 John Brantley Blvd, Morrisville, NC",lat:35.8772112,lng:-78.7934179},
- {day:"mon",part:"morning",time:"10:00 AM",name:"Optional stretch: West Point on the Eno",
-  desc:"A city park right on your route north (US-501), with a restored mill, a dam and footbridges over the Eno River. A 20–30 minute riverside wander after her early flight. Skip it if she'd rather keep moving.",
-  addr:"5101 N Roxboro St, Durham, NC",lat:36.0693421,lng:-78.9090388,
-  leg:{mi:"~20",drive:"25 min",from:"RDU Airport"}},
- {day:"mon",part:"morning",time:"11:15 AM",name:"Lunch at Brookland Eats, Roxboro",
-  desc:"A chef-owned spot with rustic charm and a seasonal menu, known locally for burgers, steaks and fresh salads. There's a deck for eating outside. Lunch runs 11–2:30.",
-  addr:"333 Old Durham Rd, Roxboro, NC · 336-322-1015",lat:36.3750624,lng:-78.9801325,
-  leg:{mi:"~25",drive:"30 min",from:"5101 N Roxboro St, Durham, NC"}},
- {day:"mon",part:"afternoon",time:"~2:00 PM",name:"Back at the RV",
+ {day:"mon",part:"morning",time:"6:30 AM",at:"rv",name:"Leave the RV",
+  desc:"South on US-501 through South Boston and Roxboro, then through Durham to RDU. Stop for gas and a restroom in Roxboro around 7:50, because the cell lot has neither."},
+ {day:"mon",part:"morning",time:"~9:00 AM",at:"cell",name:"Wait at the RDU Cell Phone Lot",
+  desc:"Free, signed from I-40, about 3 minutes from the terminals. Frontier 1112 is scheduled to land around 9:09. Wait until she texts that she has her bag.",
+  leg:{mi:"~119",drive:"2 hr 20 min + Roxboro stop"}},
+ {day:"mon",part:"morning",time:"9:15 AM",at:"t2",name:"Pickup at Terminal 2 arrivals",
+  desc:"Frontier uses Terminal 2.",
+  leg:{mi:"1.2",drive:"3 min"}},
+ {day:"mon",part:"morning",time:"9:45 AM",at:"wp",name:"Optional stretch: West Point on the Eno",
+  desc:"A city park right on your route north (US-501/Roxboro St), with a restored mill, a dam and footbridges over the Eno River. A 20–30 minute riverside wander after her early flight. Skip it if she'd rather keep moving.",
+  leg:{mi:"19",drive:"25 min"}},
+ {day:"mon",part:"morning",time:"11:00 AM",at:"be",name:"Lunch at Brookland Eats, Roxboro",
+  desc:"A chef-owned spot with rustic charm and a seasonal menu, known locally for burgers, steaks and fresh salads, with a deck for eating outside. Lunch runs 11–2:30, so you'll arrive as they open.",
+  leg:{mi:"27",drive:"32 min"}},
+ {day:"mon",part:"afternoon",time:"~1:45 PM",at:"rv",name:"Back at the RV",
   desc:"Settle in, show her around, rest. She's been up since before dawn.",
-  addr:RV,lat:37.2105233,lng:-79.0437579,
-  leg:{mi:"~73",drive:"1 hr 25 min",from:"333 Old Durham Rd, Roxboro, NC"}},
- {day:"mon",part:"evening",time:"5:00 PM",name:"Riverwalk to Percival's Island",
-  desc:"A flat, paved trail from downtown Lynchburg out onto an island in the James River, with trestle-bridge views, benches over the water and herons. Walk out as far as you like and back.",
-  addr:"Percival's Island, Lynchburg, VA",lat:37.4098431,lng:-79.1320663,
-  leg:{mi:"~19",drive:"30 min",from:RV}},
- {day:"mon",part:"evening",time:"6:30 PM",name:"Dinner at Skyline",
-  desc:"Dinner at the top of a hotel on Church Street, with a view over the hills and river as the sun goes down (sunset is about 6:55). Reviewers praise the baked brie, scallops and cocktails. Open Mondays 4–10.",
-  addr:"712 Church St, Lynchburg, VA · 434-616-4425",lat:37.4153976,lng:-79.143898,
-  leg:{mi:"1",drive:"4 min",from:"Percival's Island, Lynchburg, VA"},
-  alt:"<b>Casual backup:</b> Bootleggers on the Lower Bluffwalk, with smash burgers and a porch over the riverfront park. Open Mondays 4–9.",
+  leg:{mi:"73",drive:"1 hr 25 min"}},
+ {day:"mon",part:"evening",time:"5:00 PM",at:"rfp",name:"Riverwalk to Percival's Island",
+  desc:"Park at Riverfront Park and walk the flat, paved Riverwalk about 0.4 miles onto Percival's Island in the James River. Trestle-bridge views, benches over the water, herons. Walk out as far as you like and back.",
+  leg:{mi:"19",drive:"30 min"}},
+ {day:"mon",part:"evening",time:"6:30 PM",at:"sky",name:"Dinner at Skyline",
+  desc:"Dinner at the top of a hotel on Church Street, with a view over the hills and river around sunset (about 6:55). Reviewers praise the baked brie, scallops and cocktails. Open Mondays 4–10.",
+  leg:{mi:"0.8",drive:"4 min",walk:"15 min, uphill"},
+  alts:[{k:"boot",label:"Casual backup",note:"smash burgers and a porch over the riverfront park, open Mondays 4–9"}],
   flag:"Many Lynchburg favorites close Mondays, including William & Henry, Fratelli and Isabella's. Skyline and Bootleggers are open."},
- {day:"mon",part:"evening",time:"~8:30 PM",name:"Back to the RV",
+ {day:"mon",part:"evening",time:"~8:45 PM",at:"rv",name:"Back to the RV",
   desc:"An easy drive home.",
-  addr:RV,lat:37.2105233,lng:-79.0437579,
-  leg:{mi:"~19",drive:"30 min",from:"712 Church St, Lynchburg, VA"}},
+  leg:{mi:"19",drive:"30 min"}},
 
- {day:"tue",part:"morning",time:"Morning",name:"Slow morning at the RV",
-  desc:"Coffee outside, pack an overnight bag, nothing scheduled.",
-  addr:RV,lat:37.2105233,lng:-79.0437579},
- {day:"tue",part:"morning",time:"11:00 AM",name:"Head south to Hillsborough",
-  desc:"US-501 to Roxboro, then NC-57 into Hillsborough. Hillsborough sits right on the way to Carrboro.",
-  addr:RV,lat:37.2105233,lng:-79.0437579},
- {day:"tue",part:"afternoon",time:"12:50 PM",name:"Lunch at Antonia's, Hillsborough",
+ {day:"tue",part:"morning",time:"Morning",at:"rv",name:"Slow morning at the RV",
+  desc:"Coffee outside, pack an overnight bag, nothing scheduled. Leave around 11:00: US-501 to Roxboro, then NC-57 into Hillsborough."},
+ {day:"tue",part:"afternoon",time:"~1:00 PM",at:"ant",name:"Lunch at Antonia's, Hillsborough",
   desc:"Italian with house-made pasta, in an old building on historic Churton Street. Bread with olive oil to start. Free lot out back. Open from 11 on Tuesdays.",
-  addr:"101 N Churton St, Hillsborough, NC · 919-643-7722",lat:36.075545,lng:-79.099627,
-  leg:{mi:"~100",drive:"1 hr 50 min",from:RV},
-  alt:"<b>More casual:</b> The Village Diner, scratch-made Southern food until 1:30 (600 W King St)."},
- {day:"tue",part:"afternoon",time:"2:00 PM",name:"Poet's Walk at Ayr Mount",
+  leg:{mi:"100",drive:"1 hr 55 min"}},
+ {day:"tue",part:"afternoon",time:"2:05 PM",at:"ayr",name:"Poet's Walk at Ayr Mount",
   desc:"A free, flat one-mile loop past an 1815 brick house, through meadow and woods to the Eno River, with Adirondack chairs overlooking the fields. Allow 35–45 minutes.",
-  addr:"376 St Marys Rd, Hillsborough, NC",lat:36.0793144,lng:-79.0846933,
-  leg:{mi:"1.2",drive:"4 min",from:"101 N Churton St, Hillsborough, NC"}},
- {day:"tue",part:"afternoon",time:"3:00 PM",name:"Check in at the cottage",
+  leg:{mi:"1.2",drive:"4 min"}},
+ {day:"tue",part:"afternoon",time:"~3:05 PM",at:"cot",name:"Check in at the cottage",
   desc:"Check-in opens at 3. A detached studio with its own entrance and patio.",
-  addr:"113 W Poplar Ave, Carrboro, NC 27510",lat:35.9127291,lng:-79.080978,
-  leg:{mi:"14",drive:"22 min",from:"376 St Marys Rd, Hillsborough, NC"}},
- {day:"tue",part:"evening",time:"5:30 PM",name:"Stroll downtown Carrboro",
-  desc:"Walk past Weaver Street Market's lawn and through the old Carr Mill, the heart of town. Everything is a few blocks from the cottage.",
-  addr:"101 E Weaver St, Carrboro, NC",lat:35.9111563,lng:-79.0715995,
-  leg:{mi:"0.6",drive:"walk",walk:"12 min",from:"113 W Poplar Ave, Carrboro, NC"}},
- {day:"tue",part:"evening",time:"6:30 PM",name:"Dinner at Tesoro",
+  leg:{mi:"14.6",drive:"22 min"}},
+ {day:"tue",part:"evening",time:"5:30 PM",at:"wsm",name:"Stroll downtown Carrboro",
+  desc:"Walk past Weaver Street Market's lawn and through the old Carr Mill, the heart of town.",
+  leg:{mi:"0.7",drive:"3 min",walk:"12 min",mode:"walking"}},
+ {day:"tue",part:"evening",time:"6:30 PM",at:"tes",name:"Dinner at Tesoro",
   desc:"A tiny neighborhood pasta place with an open kitchen, about 22 seats and a speakeasy feel. The menu rotates, and reviewers single out the arancini and focaccia. Carrboro through and through.",
-  addr:"100 E Weaver St, Carrboro, NC · 919-537-8494",lat:35.9107436,lng:-79.0716082,
-  leg:{mi:"0.6",drive:"walk",walk:"12 min",from:"113 W Poplar Ave, Carrboro, NC"},
-  alt:"<b>Backup:</b> Spotted Dog (111 E Main St), a Carrboro institution in a charming old building with a big menu and patio, open until 9.",
+  leg:{mi:"0.1",walk:"2 min",mode:"walking"},
+  alts:[{k:"sd",label:"Backup",note:"a Carrboro institution in a charming old building, big menu and patio, open until 9"}],
   flag:"Tesoro is small. Reserve ahead."},
- {day:"tue",part:"evening",time:"8:00 PM",name:"Optional nightcap: Belltree",
-  desc:"A hidden cocktail bar in an old hangar, with a cozy upstairs nook. Then an early night.",
-  addr:"100 Brewer Ln, Carrboro, NC",lat:35.9095896,lng:-79.065752,
-  leg:{mi:"0.4",drive:"walk",walk:"8 min",from:"100 E Weaver St, Carrboro, NC"}},
+ {day:"tue",part:"evening",time:"8:00 PM",at:"bell",name:"Optional nightcap: Belltree",
+  desc:"A hidden cocktail bar in an old hangar, with a cozy upstairs nook.",
+  leg:{mi:"0.5",walk:"9 min",mode:"walking"}},
+ {day:"tue",part:"evening",time:"~9:00 PM",at:"cot",name:"Walk home to the cottage",
+  desc:"An early night before the airport run.",
+  leg:{mi:"1.2",drive:"4 min",walk:"22 min",mode:"walking"}},
 
- {day:"wed",part:"morning",time:"7:20 AM",name:"Leave the cottage",
-  desc:"Load the truck the night before.",
-  addr:"113 W Poplar Ave, Carrboro, NC 27510",lat:35.9127291,lng:-79.080978},
- {day:"wed",part:"morning",time:"8:05 AM",name:"Drop-off at RDU Terminal 2",
+ {day:"wed",part:"morning",time:"7:20 AM",at:"cot",name:"Leave the cottage",
+  desc:"Load the truck the night before."},
+ {day:"wed",part:"morning",time:"8:05 AM",at:"t2",name:"Drop-off at RDU Terminal 2",
   desc:"About two hours before her 10:07 AM departure on Frontier 1039.",
-  addr:"2400 John Brantley Blvd, Morrisville, NC",lat:35.8772112,lng:-78.7934179,
-  leg:{mi:"22",drive:"35–45 min (rush hour)",from:"113 W Poplar Ave, Carrboro, NC"}},
- {day:"wed",part:"morning",time:"~10:30 AM",name:"Home to the RV",
+  leg:{mi:"21",drive:"35–45 min (rush hour)"}},
+ {day:"wed",part:"morning",time:"~10:30 AM",at:"rv",name:"Home to the RV",
   desc:"Back north on US-501.",
-  addr:RV,lat:37.2105233,lng:-79.0437579,
-  leg:{mi:"~118",drive:"2 hr 15 min",from:"RDU Airport"}}
+  leg:{mi:"118",drive:"2 hr 20 min"}}
 ];
-
 
 var state = {day:"all", part:"all"};
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
-function dirUrl(from,to){return "https://www.google.com/maps/dir/?api=1&origin="+encodeURIComponent(from)+"&destination="+encodeURIComponent(to)}
-function placeUrl(s){return "https://www.google.com/maps/search/?api=1&query="+s.lat+","+s.lng}
+function q(p){return encodeURIComponent(p.name+", "+p.addr)}
+function placeUrl(p){return "https://www.google.com/maps/search/?api=1&query="+q(p)+"&query_place_id="+p.pid}
+function dirUrl(a,b,mode){return "https://www.google.com/maps/dir/?api=1&origin="+q(a)+"&origin_place_id="+a.pid+
+  "&destination="+q(b)+"&destination_place_id="+b.pid+"&travelmode="+(mode||"driving")}
 
 function makeBtns(rowId, items, key){
   var row=document.getElementById(rowId);
@@ -231,15 +232,32 @@ makeBtns("partRow",PARTS,"part");
 var map=null, layer=null;
 if(window.L){
   map=L.map("map",{scrollWheelZoom:false});
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{maxZoom:19,subdomains:"abcd",attribution:"&copy; OpenStreetMap contributors &copy; CARTO"}).addTo(map);
   layer=L.layerGroup().addTo(map);
 } else {
   document.getElementById("map").innerHTML='<div class="empty" style="padding:16px">The map needs an internet connection. The list and directions links below still work.</div>';
 }
 
+STOPS.forEach(function(s,i){ s.n=i+1; s.p=P[s.at]; s.prev=i>0?STOPS[i-1]:null; });
+
+function legHtml(s){
+  var p=s.p;
+  if(!s.leg){
+    var why = s.prev && s.prev.at===s.at ? "Same place as the previous stop" : "Starting point";
+    return '<div class="leg"><span class="chip">'+why+'</span><a href="'+placeUrl(p)+'" target="_blank" rel="noopener">Open in Maps</a></div>';
+  }
+  var L2=s.leg, from=s.prev.p;
+  return '<div class="leg"><span class="from">From '+esc(s.prev.n+'. '+from.name)+':</span></div>'+
+    '<div class="leg"><span class="chip">'+esc(L2.mi)+' mi</span>'+
+    (L2.drive?'<span class="chip">🚗 '+esc(L2.drive)+'</span>':'')+
+    (L2.walk?'<span class="chip">🚶 '+esc(L2.walk)+'</span>':'')+
+    '<a href="'+dirUrl(from,p,L2.mode)+'" target="_blank" rel="noopener">Directions</a>'+
+    '<a href="'+placeUrl(p)+'" target="_blank" rel="noopener">Place</a></div>';
+}
+
 function render(){
   var list=document.getElementById("list"); list.innerHTML="";
-  var shown=STOPS.map(function(s,i){s.n=i+1;return s}).filter(function(s){
+  var shown=STOPS.filter(function(s){
     return (state.day==="all"||s.day===state.day)&&(state.part==="all"||s.part===state.part)});
   document.getElementById("count").textContent = shown.length+" stop"+(shown.length===1?"":"s")+" shown";
   if(!shown.length){list.innerHTML='<p class="empty">Nothing planned for that combination. Try another time of day.</p>';}
@@ -249,34 +267,30 @@ function render(){
     g.innerHTML='<div class="dayhead"><h2>'+esc(d.title)+'</h2><span class="wx">'+esc(d.wx)+'</span></div>';
     var ol=document.createElement("ol");
     items.forEach(function(s){
-      var leg="";
-      if(s.leg){
-        leg='<div class="leg"><span class="chip">'+esc(s.leg.mi)+' mi</span>'+
-          (s.leg.drive!=="walk"?'<span class="chip">🚗 '+esc(s.leg.drive)+'</span>':'')+
-          (s.leg.walk?'<span class="chip">🚶 '+esc(s.leg.walk)+'</span>':'')+
-          '<a href="'+dirUrl(s.leg.from,s.addr.split(" · ")[0])+'" target="_blank" rel="noopener">Directions</a></div>';
-      } else {
-        leg='<div class="leg"><a href="'+placeUrl(s)+'" target="_blank" rel="noopener">Open in Maps</a></div>';
-      }
+      var p=s.p;
+      var alts=(s.alts||[]).map(function(a){var ap=P[a.k];
+        return '<div class="alt"><b>'+esc(a.label)+':</b> <a href="'+placeUrl(ap)+'" target="_blank" rel="noopener">'+esc(ap.name)+'</a> ('+esc(ap.addr)+'), '+esc(a.note)+'.</div>';}).join("");
       var li=document.createElement("li"); li.className="stop";
       li.innerHTML='<div class="pin">'+s.n+'</div><div class="body">'+
         '<div class="top"><span class="t">'+esc(s.time)+'</span><span class="tag">'+esc(s.part)+'</span></div>'+
-        '<strong>'+esc(s.name)+'</strong><p>'+esc(s.desc)+'</p>'+leg+
-        '<div class="addr">'+esc(s.addr)+'</div>'+
-        (s.alt?'<div class="alt">'+s.alt+'</div>':'')+
-        (s.flag?'<div class="flag">'+esc(s.flag)+'</div>':'')+'</div>';
+        '<strong>'+esc(s.name)+'</strong><p>'+esc(s.desc)+'</p>'+legHtml(s)+
+        '<div class="addr">'+esc(p.name)+' · '+esc(p.addr)+(p.phone?' · '+esc(p.phone):'')+'</div>'+
+        alts+(s.flag?'<div class="flag">'+esc(s.flag)+'</div>':'')+'</div>';
       ol.appendChild(li);
     });
     g.appendChild(ol); list.appendChild(g);
   });
   if(map){
-    layer.clearLayers(); var pts=[], seen={};
-    shown.forEach(function(s){
-      var key=s.lat+","+s.lng; pts.push([s.lat,s.lng]);
-      var icon=L.divIcon({className:"",html:'<div class="mk">'+s.n+'</div>',iconSize:[26,26],iconAnchor:[13,13]});
-      var off=seen[key]?seen[key]*0.00018:0; seen[key]=(seen[key]||0)+1;
-      L.marker([s.lat+off,s.lng+off],{icon:icon}).addTo(layer)
-        .bindPopup('<b>'+s.n+'. '+esc(s.name)+'</b><br>'+esc(s.time)+'<br><a href="'+placeUrl(s)+'" target="_blank" rel="noopener">Directions</a>');
+    layer.clearLayers(); var pts=[], groups={};
+    shown.forEach(function(s){ (groups[s.at]=groups[s.at]||[]).push(s); });
+    Object.keys(groups).forEach(function(k){
+      var p=P[k], ss=groups[k], nums=ss.map(function(s){return s.n}).join(",");
+      pts.push([p.lat,p.lng]);
+      var w=Math.max(26, 10+nums.length*7);
+      var icon=L.divIcon({className:"",html:'<div class="mk" style="width:'+w+'px;border-radius:13px">'+nums+'</div>',iconSize:[w,26],iconAnchor:[w/2,13]});
+      L.marker([p.lat,p.lng],{icon:icon}).addTo(layer)
+        .bindPopup('<b>'+esc(p.name)+'</b><br>'+ss.map(function(s){return s.n+'. '+esc(s.time)+' · '+esc(s.name)}).join('<br>')+
+          '<br><a href="'+placeUrl(p)+'" target="_blank" rel="noopener">Open in Google Maps</a>');
     });
     if(pts.length){ map.fitBounds(pts,{padding:[30,30],maxZoom:15}); }
     else { map.setView([36.6,-79.0],8); }
